@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nicholas Tay</title>
+  <meta name="description" content="Nicholas Tay — a CS student who loves the outdoors: camping, hiking, and climbing. Sharing projects, trail notes, and gear picks in a clean, minimal brown theme." />
+  <link rel="preload" as="image" href="me.jpg" />
+  <style>
+    :root{
+      /* Minimal brown / earth palette */
+      --bg: #f7f3ef;          /* sand */
+      --paper: #fffaf3;       /* parchment */
+      --ink: #2b2118;         /* espresso */
+      --muted: #6b4f3b;       /* cocoa */
+      --accent: #8b5e3c;      /* saddle */
+      --accent-2: #a47148;    /* tan */
+      --line: #e6d8c3;        /* bone */
+    }
+    /* Base */
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 56px 24px; }
+
+    /* Header */
+    .head { text-align: center; }
+    .head img { width: 140px; height: 140px; border-radius: 12px; object-fit: cover; display: block; margin: 0 auto 20px; transition: filter 220ms ease, opacity 220ms ease; box-shadow: 0 6px 22px rgba(0,0,0,.06); background-color: #f4efe7; background-image: linear-gradient(135deg, #f4efe7 0%, #e8dcc8 100%); border: 1px solid var(--line); }
+    .head img.blur { filter: blur(10px); opacity: .85; }
+    .head img.loaded { filter: none; opacity: 1; }
+
+    h1 { margin: 0 0 8px 0; font-size: 30px; letter-spacing: -0.02em; font-weight: 700; }
+    .tag { margin: 0 0 16px 0; color: var(--muted); font-weight: 400; line-height: 1.4; }
+
+    /* Links / nav */
+    .links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; margin-top: 10px; }
+    .links a { margin: 0; color: var(--ink); text-decoration: none; transition: all 200ms ease; display: inline-flex; align-items: center; line-height: 1.2; font-weight: 500; padding: 4px 0; }
+    .links a:hover { color: var(--accent); transform: translateY(-1px); }
+    .links a.disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+    /* Terminal */
+    .terminal { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: #0f0f0f; color: #f0efe9; border: 1px solid #2a2a2a; border-radius: 12px; padding: 14px 16px; margin-top: 14px; max-height: 380px; overflow-y: auto; overflow-x: hidden; line-height: 1.45; font-size: 14px; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+    .terminal a { color: #c9a676; text-decoration: underline; }
+    .terminal a:hover { color: #e2c39a; }
+    .terminal[hidden] { display: none; }
+
+    /* Footer */
+    footer { margin-top: 22px; color: var(--muted); font-size: 14px; text-align: center; }
+
+    /* Trail gallery */
+    .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+    .thumb{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#fff}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(0.9)}
+    .caption{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.45);color:#fff;padding:4px 8px;border-radius:8px;font-size:12px}
+    #trail-gallery[hidden]{display:none}
+
+    /* Lightbox */
+    #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9999}
+    #lightbox img{max-width:90vw;max-height:88vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+    #lightbox.show{display:flex}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <img src="me.jpg" alt="Nicholas Tay" loading="eager" decoding="async" class="blur" />
+      <h1>Nicholas Tay</h1>
+      <p class="tag">A CS student who loves the outdoors — camping, hiking, and climbing.</p>
+      <p class="links">
+        <!-- in-page sections that open the typing terminal -->
+        <a href="#about"   data-target="about">About</a>
+        <a href="#projects" data-target="projects">Projects</a>
+        <a href="#trails"  data-target="trails">Trails</a>
+        <a href="#contact" data-target="contact">Contact</a>
+        <!-- external -->
+        <a href="mailto:zuozhu4444@gmail.com" aria-label="Email" title="Email">Email↗</a>
+        <a href="https://github.com/Nicholas1025" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">GitHub↗</a>
+        <a href="https://www.linkedin.com/in/nicholas-t-bb65831b2/" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">LinkedIn↗</a>
+        <a href="https://vsco.co/nicholas1025x/gallery" target="_blank" rel="noopener" aria-label="VSCO" title="VSCO">VSCO↗</a>
+        <a href="https://instagram.com/Nicholas_1025" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">Instagram↗</a>
+      </p>
+    </div>
+
+    <div class="body">
+      <div id="terminal" class="terminal" aria-live="polite" hidden></div>
+
+      <section id="trail-gallery" aria-label="Trail Photos" hidden>
+        <div class="gallery">
+          <a href="https://images.unsplash.com/photo-1699654773042-f8b07f9cc86d?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="thumb" data-full="https://source.unsplash.com/featured/1600x1200/?Gunung%20Datuk,forest">
+            <img src="https://images.unsplash.com/photo-1699654773042-f8b07f9cc86d?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Gunung Datuk" />
+            <span class="caption">Gunung Datuk</span>
+          </a>
+          <a href="https://images.unsplash.com/photo-1522850067562-a4c60453058d?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="thumb" data-full="https://source.unsplash.com/featured/1600x1200/?Bukit%20Kutu,Malaysia">
+            <img src="https://images.unsplash.com/photo-1522850067562-a4c60453058d?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Bukit Kutu" />
+            <span class="caption">Bukit Kutu</span>
+          </a>
+          <a href="https://images.unsplash.com/photo-1519309621146-2a47d1f7103a?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="thumb" data-full="https://source.unsplash.com/featured/1600x1200/?Broga%20Hill,Malaysia">
+            <img src="https://images.unsplash.com/photo-1519309621146-2a47d1f7103a?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Broga Hill" />
+            <span class="caption">Broga Hill</span>
+          </a>
+          <a href="https://images.unsplash.com/photo-1542332213-1d277bf3d6c6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="thumb" data-full="https://source.unsplash.com/featured/1600x1200/?Batu%20Caves,stairs">
+            <img src="https://images.unsplash.com/photo-1542332213-1d277bf3d6c6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Batu Caves" />
+            <span class="caption">Tanjung Tuan</span>
+          </a>
+        </div>
+      </section>
+
+      <div id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer"><img alt="Trail photo" /></div>
+    </div>
+
+    <footer>@ 2025 Nicholas Tay</footer>
+  </div>
+
+  <script>
+(function () {
+  // Image loading and tagline (kept from original behavior)
+  var hero = document.querySelector('.head img');
+  if (hero && hero.complete) hero.classList.add('loaded'), hero.classList.remove('blur');
+  else if (hero) hero.onload = () => (hero.classList.add('loaded'), hero.classList.remove('blur'));
+
+  var terminal = document.getElementById('terminal');
+  var navLinks = document.querySelectorAll('.links a[data-target]');
+  var allTopLinks = document.querySelectorAll('.links a');
+  var gallery = document.getElementById('trail-gallery');
+  var lightbox = document.getElementById('lightbox');
+  var lightImg = lightbox ? lightbox.querySelector('img') : null;
+  var typingTimeout = null; var typingToken = 0; var isTyping = false;
+
+  // ---- Editable content ----
+  var contentMap = {
+    about: [
+      '> open about',
+      '',
+      "Hi, I'm Nicholas — CS student & outdoor kid at heart.",
+      'Climbing, camping, and hiking keep me balanced.',
+      'I like minimal builds, clean design, and strong coffee.',
+      'Based in Malaysia; always up for sunrise summits.'
+    ],
+    projects: [
+      '> open projects',
+      '',
+      '- IMC Trading Strategies — multi-product fusion. (code private)',
+      '- ML Energy Dashboard — XGBoost/RF/SVR with clean charts. (demo soon)',
+      '- MMU Enrollment System — Flask full-stack coursework. (code private)',
+      '',
+      'More on GitHub: https://github.com/Nicholas1025'
+    ],
+    trails: [
+      '> open trails',
+      '',
+      'Gunung Datuk — first light, granite slabs, happy calves.',
+      'Bukit Kutu — cloud ocean days, watch those markers on descent.',
+      'Broga Hill — beginner-friendly sunrise, bring a wind layer.',
+      'Tanjung Tuan — pumpy steps, great warm-up for leg day.',
+      '',
+      '喜欢一起探险、露营、登山；欢迎组队（我会带零食）。',
+      'If you belay, I bring jokes. Deal? : )'
+    ],
+    contact: [
+      '> open contact',
+      '',
+      'Email  — zuozhu4444@gmail.com',
+      'GitHub — https://github.com/Nicholas1025',
+      'LinkedIn — https://www.linkedin.com/in/nicholas-t-bb65831b2/',
+      'VSCO — https://vsco.co/nicholas1025x/gallery',
+      'Instagram — https://instagram.com/Nicholas_1025',
+      'AllTrails — Soooooooooooooooooon',
+      '',
+      'Open to collab, study jams, and weekend trail plans.'
+    ]
+  };
+
+  function clearTerminal() { terminal.textContent = ''; }
+  function setNavDisabled(disabled) {
+    allTopLinks.forEach(link => {
+      link.classList.toggle('disabled', disabled);
+      disabled ? link.setAttribute('aria-disabled', 'true') : link.removeAttribute('aria-disabled');
+    });
+  }
+  function cancelTyping() {
+    typingToken++; if (typingTimeout) { clearTimeout(typingTimeout); typingTimeout = null; }
+    isTyping = false; setNavDisabled(false);
+  }
+  function typeLines(lines, done) {
+    isTyping = true; setNavDisabled(true);
+    var i = 0, char = 0; var myToken = ++typingToken;
+    function step() {
+      if (myToken !== typingToken) return;
+      if (i >= lines.length) { isTyping = false; setNavDisabled(false); if (myToken === typingToken && done) done(); return; }
+      var line = lines[i];
+      if (char < line.length) { terminal.textContent += line.charAt(char); char++; }
+      else { terminal.textContent += '\n'; i++; char = 0; }
+      terminal.scrollTop = terminal.scrollHeight; typingTimeout = setTimeout(step, 6);
+    }
+    typingTimeout = setTimeout(step, 0);
+  }
+  function linkify() {
+    var text = terminal.textContent;
+    var html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    terminal.innerHTML = html;
+  }
+  function toggleGallery(showIt){ if(!gallery) return; gallery.hidden = !showIt; if(showIt) gallery.scrollIntoView({ behavior:'smooth', block:'start' }); }
+  function wireThumbs(){ if(!gallery) return; gallery.querySelectorAll('.thumb').forEach(a=>{ a.addEventListener('click', function(e){ e.preventDefault(); var src = a.getAttribute('data-full') || a.getAttribute('href'); if(lightImg){ lightImg.src = src; lightbox.classList.add('show'); } }); }); }
+  wireThumbs();
+  if(lightbox){ lightbox.addEventListener('click', function(){ lightbox.classList.remove('show'); if(lightImg) lightImg.src=''; }); }
+
+  function show(key) { 
+    var lines = contentMap[key] || ['> unknown command']; 
+    terminal.hidden = false; 
+    cancelTyping(); 
+    clearTerminal(); 
+    typeLines(lines, linkify); 
+    terminal.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+    toggleGallery(key === 'trails');
+  }
+
+  navLinks.forEach(link => { link.onclick = e => (e.preventDefault(), show(link.dataset.target)); });
+  document.querySelectorAll('.links a[href]:not([data-target]):not([href^="mailto:"])').forEach(link => { link.target = '_blank'; link.rel = 'noopener'; });
+  const hash = location.hash.slice(1); if (hash && contentMap[hash]) show(hash);
+})();
+</script>
+
+</body>
+</html>

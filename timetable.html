@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet">
+
+  <title>My Timetable</title>
+  <meta name="description" content="Clean, minimal timetable for university courses (earthy brown theme)" />
+  <style>
+    :root{
+      /* ===== same palette as index.html ===== */
+      --bg: #f7f3ef;       /* sand */
+      --paper: #fffaf3;    /* parchment */
+      --ink: #2b2118;      /* espresso */
+      --muted: #6b4f3b;    /* cocoa */
+      --accent: #8b5e3c;   /* saddle */
+      --accent-2: #a47148; /* tan */
+      --line: #e6d8c3;     /* bone */
+
+      /* timetable layout */
+      --row-h: 56px;       /* per-hour row height */
+    }
+
+    /* Base */
+    *{ box-sizing: border-box; }
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family:-apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; line-height:1.6;
+      font-size:16.5px;
+    }
+    .container{ max-width:1200px; margin:0 auto; padding:32px 20px; }
+
+    /* Header */
+    .header{ text-align:center; margin-bottom:24px; }
+    .header h1{ margin:0 0 6px 0; font-size:30px; font-weight:700; letter-spacing:-.02em; }
+    .header p{ margin:0; color:var(--muted); font-size:15px; }
+
+    /* Controls */
+    .controls{ display:flex; justify-content:center; gap:12px; margin:20px 0 24px; flex-wrap:wrap; }
+    .btn, .select{
+      background:var(--paper); border:1px solid var(--line); color:var(--ink);
+      padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600;
+      cursor:pointer; transition:all .2s ease; display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+    }
+    .btn:hover, .select:hover{ background:var(--accent); color:var(--paper); border-color:var(--accent); }
+    .select{ appearance:none; padding-right:36px;
+      background-image:linear-gradient(45deg,transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position:calc(100% - 18px) calc(1em - 3px), calc(100% - 12px) calc(1em - 3px); background-size:6px 6px, 6px 6px; background-repeat:no-repeat;
+    }
+
+    /* Card */
+    .timetable{
+      position:relative;
+      background:var(--paper); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+    }
+
+    /* Base grid (labels + empty cells) */
+    .time-grid{
+      display:grid;
+      grid-template-columns:90px repeat(5, 1fr);
+      grid-auto-rows:var(--row-h);
+      font-size:14px;
+    }
+
+    .time-header, .day-header{
+      background:#fbf6ee;
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:12px 10px; font-size:12px; font-weight:700; color:var(--muted); text-align:center;
+      position:sticky; z-index:2;
+    }
+    .time-header{ left:0; }
+    .day-header{ top:0; }
+    .day-header:last-child{ border-right:none; }
+
+    .time-slot{
+      border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+      padding:8px; font-size:12px; font-weight:600; color:var(--muted); text-align:center; background:#fbf6ee;
+      display:flex; align-items:center; justify-content:center; position:sticky; left:0; z-index:2;
+    }
+
+    .schedule-cell{
+      border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+      min-height:var(--row-h); cursor:pointer; transition:background-color .2s ease;
+    }
+    .schedule-cell:last-child{ border-right:none; }
+    .schedule-cell:hover{ background:rgba(139,94,60,.06); }
+
+    /* Course layer (real spanning) */
+    .course-layer{
+      position:absolute; inset:0;
+      display:grid; grid-template-columns:90px repeat(5, 1fr); grid-auto-rows:var(--row-h);
+      pointer-events:none; z-index:1; /* let empty cells be clickable */
+    }
+
+    /* Course block */
+    .course-block{
+      background:#eee;
+      border-radius:10px;
+      box-shadow:0 4px 14px rgba(0,0,0,.08);
+      margin:6px;                 /* 给自动增高留出余量 */
+      padding:16px 14px;          /* 透气 */
+      pointer-events:auto;        /* 允许点击块本身 */
+      transition:transform .15s ease, box-shadow .15s ease;
+      overflow:hidden;            /* 圆角裁切 */
+    }
+    .course-block * {
+    font-size: 14px;      /* 你可以改成 15px / 16px 看视觉效果 */
+    line-height: 1.4;
+    }
+    
+    .course-block *{
+      word-break:break-word;
+      overflow-wrap:anywhere;
+      hyphens:auto;
+    }
+    .course-block:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(0,0,0,.1); }
+    .course-block.dark{ color:#fff; }
+
+    .course-type{  font-family: "Lora", serif;margin-bottom:8px; font-weight:700; font-size:18px; opacity:.9;}
+    .course-code, .course-roomcode, .course-roomname, .course-name{font-family: "Noto Serif", serif; margin-bottom:4px; }
+
+    .course-room {
+      font-weight:600;
+      font-size:14px;
+      margin-bottom:4px;
+    }
+
+    /* Modal */
+    .modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:12px; }
+    .modal.show{ display:flex; }
+    .modal-content{
+      background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:22px; width:100%; max-width:440px;
+      box-shadow:0 12px 36px rgba(0,0,0,.14);
+    }
+    .modal-header{ font-size:18px; font-weight:700; margin-bottom:14px; color:var(--ink); }
+    .form-group{ margin-bottom:14px; }
+    .form-group label{ display:block; margin-bottom:6px; font-size:13px; font-weight:700; color:var(--muted); }
+    .form-group input, .form-group select{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px; background:var(--paper); color:var(--ink); outline:none;
+    }
+    .form-group input:focus, .form-group select:focus{ border-color:var(--accent); }
+
+    .modal-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+    .btn-danger{ background:#b13a2e; border-color:#b13a2e; color:#fff; }
+    .btn-danger:hover{ background:#8f2f25; border-color:#8f2f25; }
+
+    @media (max-width: 768px){
+      .container{ padding:20px 12px; }
+      .time-grid{ grid-template-columns:70px repeat(5, 1fr); }
+    }
+
+    /* Print */
+    @media print{
+      .controls, .modal{ display:none !important; }
+      body{ background:#fff; }
+      .timetable{ border:none; box-shadow:none; }
+      .course-block{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      @page{ size:A4 portrait; margin:12mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>My Timetable</h1>
+      <p>Click any time slot to add or edit your courses</p>
+    </div>
+
+    <div class="controls">
+      <!-- minimalist brown block color selector -->
+      <select class="select" id="colorHint" title="Default Block Color">
+        <option value="parchment" selected>Parchment</option>
+        <option value="sand">Sand</option>
+        <option value="tan">Tan</option>
+        <option value="saddle">Saddle</option>
+        <option value="cocoa">Cocoa</option>
+        <option value="charcoal">Charcoal</option>
+        <option value="ink">Ink</option>
+      </select>
+
+      <button class="btn" onclick="clearAll()">Clear All</button>
+      <button class="btn" onclick="exportData()">Export</button>
+      <button class="btn" onclick="importData()">Import</button>
+    </div>
+
+    <div class="timetable">
+      <div class="time-grid" id="timeGrid"><!-- populated by JS --></div>
+      <div class="course-layer" id="courseLayer" aria-label="Courses"></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="courseModal" aria-modal="true" role="dialog">
+    <div class="modal-content">
+      <div class="modal-header">Add/Edit Course</div>
+
+      <div class="form-group">
+        <label>Course Type</label>
+        <select id="courseType">
+          <option value="lecture">Lecture</option>
+          <option value="laboratory">Laboratory</option>
+          <option value="tutorial">Tutorial</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Course Code</label>
+        <input type="text" id="courseCode" placeholder="e.g., OB6233">
+      </div>
+
+      <div class="form-group">
+        <label>Room Code</label>
+        <input type="text" id="roomCode" placeholder="e.g., MSMX0001-CLC">
+      </div>
+
+      <div class="form-group">
+        <label>Room Name</label>
+        <input type="text" id="roomName" placeholder="e.g., Lecture Hall A1">
+      </div>
+
+      <div class="form-group">
+        <label>Section + Course Name</label>
+        <input type="text" id="courseName" placeholder="e.g., FST4 AI FUNDAMENTALS">
+      </div>
+
+      <div class="form-group">
+        <label>Duration (hours)</label>
+        <select id="courseDuration">
+          <option value="1">1 hour</option>
+          <option value="2" selected>2 hours</option>
+          <option value="3">3 hours</option>
+          <option value="4">4 hours</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Block Color</label>
+        <select id="courseColor">
+          <option value="parchment" selected>Parchment</option>
+          <option value="sand">Sand</option>
+          <option value="tan">Tan</option>
+          <option value="saddle">Saddle</option>
+          <option value="cocoa">Cocoa</option>
+          <option value="charcoal">Charcoal</option>
+          <option value="ink">Ink</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger" onclick="deleteCourse()" id="deleteBtn" style="display:none;">Delete</button>
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn" onclick="saveCourse()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== State =====
+    let courses = {};
+    let currentCell = null;
+    let editingCourse = null;
+
+    const timeSlots = ['8:00','9:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+
+    // Brown theme color map (matching index palette)
+    const COLOR_MAP = {
+      parchment: { bg: '#fffaf3', ink: '#2b2118' }, // --paper
+      sand:      { bg: '#f7f3ef', ink: '#2b2118' }, // --bg
+      tan:       { bg: '#e9d5bd', ink: '#2b2118' }, // light tan
+      saddle:    { bg: '#d9b38c', ink: '#2b2118' }, // from --accent family
+      cocoa:     { bg: '#8b5e3c', ink: '#ffffff' }, // accent, white text
+      charcoal:  { bg: '#4a3b2f', ink: '#ffffff' },
+      ink:       { bg: '#2b2118', ink: '#ffffff' }  // --ink
+    };
+
+    // ===== Init grid =====
+    function initializeGrid(){
+      const grid = document.getElementById('timeGrid');
+
+      // corner
+      const corner = document.createElement('div');
+      corner.className = 'time-header';
+      grid.appendChild(corner);
+
+      // day headers
+      days.forEach(day=>{
+        const header = document.createElement('div');
+        header.className = 'day-header';
+        header.textContent = day;
+        grid.appendChild(header);
+      });
+
+      // rows
+      for (let i=0;i<timeSlots.length;i++){
+        const timeLabel = document.createElement('div');
+        timeLabel.className = 'time-slot';
+        timeLabel.textContent = timeSlots[i];
+        grid.appendChild(timeLabel);
+
+        days.forEach((_, dayIndex)=>{
+          const cell = document.createElement('div');
+          cell.className = 'schedule-cell';
+          cell.dataset.day = dayIndex;
+          cell.dataset.time = i;
+          cell.tabIndex = 0;
+          cell.addEventListener('click', ()=>openModal(cell));
+          grid.appendChild(cell);
+        });
+      }
+
+      loadData();
+      const savedDefault = localStorage.getItem('tt_default_color');
+      if (savedDefault) document.getElementById('colorHint').value = savedDefault;
+      renderCourses();
+    }
+
+    // ===== Modal =====
+    function openModal(cell){
+      currentCell = cell;
+      const day = parseInt(cell.dataset.day,10);
+      const time = parseInt(cell.dataset.time,10);
+      const key = `${day}-${time}`;
+
+      if (courses[key]) {
+        editingCourse = key;
+        const c = courses[key];
+        document.getElementById('courseType').value    = c.type;
+        document.getElementById('courseCode').value    = c.code || '';
+        document.getElementById('courseDuration').value= c.duration || 2;
+        document.getElementById('courseColor').value   = c.color || (document.getElementById('colorHint')?.value || 'parchment');
+        document.getElementById('courseName').value    = c.name || '';
+
+        // 兼容旧数据：room -> roomCode/roomName
+        let rc = c.roomCode || '', rn = c.roomName || '';
+        if (!rc && !rn && c.room) {
+          // 拆 "MSMX0001-CLC - Lecture Hall A1"
+          const m = String(c.room).match(/^\s*([^\-]+?)\s*-\s*(.+)\s*$/);
+          if (m) { rc = m[1].trim(); rn = m[2].trim(); }
+          else { rn = c.room; }
+        }
+        document.getElementById('roomCode').value = rc;
+        document.getElementById('roomName').value = rn;
+
+        document.getElementById('deleteBtn').style.display = 'block';
+      } else {
+        editingCourse = null;
+        document.getElementById('courseType').value    = 'lecture';
+        document.getElementById('courseCode').value    = '';
+        document.getElementById('courseDuration').value= '2';
+        document.getElementById('courseColor').value   = (document.getElementById('colorHint')?.value || 'parchment');
+        document.getElementById('courseName').value    = '';
+        document.getElementById('roomCode').value      = '';
+        document.getElementById('roomName').value      = '';
+        document.getElementById('deleteBtn').style.display = 'none';
+      }
+
+      document.getElementById('courseModal').classList.add('show');
+    }
+
+    function closeModal(){
+      document.getElementById('courseModal').classList.remove('show');
+      currentCell=null; editingCourse=null;
+    }
+
+    document.addEventListener('keydown', (e)=>{
+      const open = document.getElementById('courseModal').classList.contains('show');
+      if (!open) return;
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Enter')  saveCourse();
+    });
+    document.getElementById('courseModal').addEventListener('click', (e)=>{ if(e.target.id==='courseModal') closeModal(); });
+
+    // ===== CRUD =====
+    function saveCourse(){
+      const type     = document.getElementById('courseType').value;
+      const code     = document.getElementById('courseCode').value.trim();
+      const roomCode = document.getElementById('roomCode').value.trim();
+      const roomName = document.getElementById('roomName').value.trim();
+      const name     = document.getElementById('courseName').value.trim();
+      const duration = parseInt(document.getElementById('courseDuration').value,10);
+      const color    = document.getElementById('courseColor').value;
+
+      // 校验
+      if (!code || !roomName || !name) {
+        alert('Please fill in Course Code, Room Name, and Section + Course Name');
+        return;
+      }
+      const day  = parseInt(currentCell.dataset.day,10);
+      const time = parseInt(currentCell.dataset.time,10);
+
+      // 删除旧的（编辑态）
+      if (editingCourse) delete courses[editingCourse];
+
+      // 冲突检查
+      for (let i=0;i<duration;i++){
+        const t = time+i;
+        if (t>=timeSlots.length){
+          alert('Course duration extends beyond available time slots');
+          return;
+        }
+        const k = `${day}-${t}`;
+        if (courses[k] && k!==editingCourse){
+          alert(`Conflict at ${timeSlots[t]} on ${days[day]}`);
+          return;
+        }
+      }
+
+      const key = `${day}-${time}`;
+      // 兼容字段 room 也一并生成（便于旧版/导出）
+      const legacyRoom = roomCode ? `${roomCode} - ${roomName}` : roomName;
+
+      courses[key] = { type, code, roomCode, roomName, room: legacyRoom, name, duration, day, time, color };
+
+      saveData();
+      renderCourses();
+      closeModal();
+    }
+
+    function deleteCourse(){
+      if (editingCourse && courses[editingCourse]){
+        delete courses[editingCourse];
+        saveData(); renderCourses(); closeModal();
+      }
+    }
+
+    // ===== Render (real spanning on course-layer) =====
+ // ===== Render (real spanning on course-layer) =====
+// ===== Render (rows grow together with blocks, still fixed duration) =====
+        function renderCourses(){
+        const grid  = document.getElementById('timeGrid');
+        const layer = document.getElementById('courseLayer');
+        layer.innerHTML = '';
+
+        // 基础每小时行高（px）
+        const baseRowH = parseInt(
+            getComputedStyle(document.documentElement).getPropertyValue('--row-h').trim(),
+            10
+        ) || 56;
+
+        // 为每个“小时行”准备一个可变高度，初始为 baseRowH
+        const rowHeights = Array(timeSlots.length).fill(baseRowH);
+
+        // 先创建所有块（不自动扩高），测量需要的总高度，并把需求分摊到各小时行
+        const tempBlocks = []; // 保存 {el, t0, span}
+        Object.values(courses).forEach(course=>{
+            const t0   = (Number.isInteger(course.time) ? course.time : 0);
+            const span = Math.max(1, parseInt(course.duration,10) || 1);
+            const d    = (Number.isInteger(course.day)  ? course.day  : 0);
+
+            const colStart = d + 2;
+            const rowStart = t0 + 2;
+
+            const block = document.createElement('div');
+            block.className = 'course-block';
+
+            // 配色
+            const fallbackKey = document.getElementById('colorHint')?.value || 'parchment';
+            const clr = (COLOR_MAP[course.color] || COLOR_MAP[fallbackKey] || COLOR_MAP.parchment);
+            block.style.background = clr.bg;
+            block.style.color      = clr.ink;
+            if ((clr.ink || '').toLowerCase() === '#ffffff') block.classList.add('dark');
+
+            // 内容
+            const typeDisplay = course.type === 'lecture' ? 'Lecture'
+                            : course.type === 'laboratory' ? 'Laboratory'
+                            : 'Tutorial';
+            const roomCodeTxt = course.roomCode || '';
+            const roomNameTxt = course.roomName || (course.room ? String(course.room).replace(/^\s*([^\-]+?)\s*-\s*/, '') : '');
+            block.innerHTML = `
+            <div class="course-type">${typeDisplay}</div>
+            <div class="course-code">${course.code || ''}</div>
+            <div class="course-roomcode">${roomCodeTxt}</div>
+            <div class="course-roomname">${roomNameTxt}</div>
+            <div class="course-name">${course.name || ''}</div>
+            `;
+
+            // 点击编辑
+            block.addEventListener('click',(e)=>{
+            e.stopPropagation();
+            const cell = document.querySelector(`.schedule-cell[data-day="${d}"][data-time="${t0}"]`);
+            if (cell) openModal(cell);
+            });
+
+            block.style.gridColumn = `${colStart} / span 1`;
+            block.style.gridRow    = `${rowStart} / span ${span}`;
+            layer.appendChild(block);
+
+            tempBlocks.push({ el:block, t0, span });
+        });
+
+        // ——测量并分摊所需高度到行高数组——
+        // 让浏览器先排版，再测量
+        requestAnimationFrame(()=>{
+            // 每个块需要的总像素（含一些余量）
+            tempBlocks.forEach(({el, t0, span})=>{
+            const marginY = 12; // 与 .course-block 上下 margin 对齐
+            const neededTotal = el.scrollHeight + marginY;
+
+            // 现有合计高度
+            const currentTotal = rowHeights.slice(t0, t0+span).reduce((a,b)=>a+b, 0);
+
+            if (neededTotal > currentTotal) {
+                const extra = neededTotal - currentTotal;
+                const addEach = Math.ceil(extra / span);
+                for (let i=0;i<span;i++){
+                rowHeights[t0 + i] += addEach;
+                }
+            }
+            });
+
+            // 把行高写回到两个层：第1行是表头行（保持 baseRowH），后面是每小时行
+            const rowsCss = [ `${baseRowH}px`, ...rowHeights.map(px=>`${px}px`) ].join(' ');
+            grid.style.gridTemplateRows  = rowsCss;
+            layer.style.gridTemplateRows = rowsCss;
+
+            // 同时限制块的可视高度为它所跨行的合计，避免再溢出
+            tempBlocks.forEach(({el, t0, span})=>{
+            const maxPx = rowHeights.slice(t0, t0+span).reduce((a,b)=>a+b, 0) - 12 /*marginY*/;
+            el.style.maxHeight = `${maxPx}px`;
+            el.style.overflowY = 'auto';
+            });
+        });
+        }
+
+
+    // ===== Storage & IO =====
+    function saveData(){
+      try{ localStorage.setItem('timetable_data', JSON.stringify(courses)); }catch{}
+    }
+    function loadData(){
+      try{
+        const raw = localStorage.getItem('timetable_data');
+        if (raw) courses = JSON.parse(raw) || {};
+      }catch{ courses = {}; }
+    }
+
+    function clearAll(){
+      if (confirm('Clear all courses?')){
+        courses = {}; saveData(); renderCourses();
+      }
+    }
+
+    function exportData(){
+      const data = JSON.stringify(courses, null, 2);
+      const blob = new Blob([data], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0,10);
+      a.href = url; a.download = `timetable_${stamp}.json`; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(){
+      const input = document.createElement('input');
+      input.type='file'; input.accept='.json';
+      input.onchange = (e)=>{
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ev=>{
+          try{
+            const obj = JSON.parse(ev.target.result);
+            // 仅验证必要字段；颜色接受任意字符串（兼容旧数据如 'fog'）
+            const ok = Object.values(obj).every(c =>
+              ['lecture','laboratory','tutorial'].includes(c.type) &&
+              Number.isInteger(c.day) && Number.isInteger(c.time) &&
+              Number.isInteger(c.duration)
+            );
+            if(!ok) return alert('Invalid file format');
+            courses = obj; saveData(); renderCourses(); alert('Imported!');
+          }catch{ alert('Invalid file format'); }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // ===== Default color selector（NULL 安全）=====
+    const colorHintEl = document.getElementById('colorHint');
+    if (colorHintEl) {
+      const savedDefault = localStorage.getItem('tt_default_color');
+      if (savedDefault) colorHintEl.value = savedDefault;
+      colorHintEl.addEventListener('change', (e)=>{
+        try{ localStorage.setItem('tt_default_color', e.target.value); }catch{}
+      });
+    }
+    function getDefaultColor(){
+      return (colorHintEl && colorHintEl.value) || 'parchment';
+    }
+
+    // ===== Boot =====
+    document.addEventListener('DOMContentLoaded', initializeGrid);
+    window.addEventListener('resize', ()=>{ /* grid spanning auto adapts; nothing to recalc */ });
+  </script>
+</body>
+</html>

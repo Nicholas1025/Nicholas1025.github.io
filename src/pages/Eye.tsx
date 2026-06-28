@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import EyeDepthGallery from "@/components/EyeDepthGallery";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -227,6 +228,7 @@ function MediaFrame({ item, priority = false }: { item: EyeMedia; priority?: boo
 export default function Eye() {
   const rootRef = useRef<HTMLDivElement>(null);
   const hero = media[0];
+  const depthGallery = useMemo(() => media.filter((item) => item.kind === "image").slice(0, 8), []);
   const gallery = useMemo(() => media.slice(1).filter((item) => item.kind === "image"), []);
 
   useGSAP(
@@ -352,6 +354,15 @@ export default function Eye() {
             </figcaption>
           </figure>
         </section>
+
+        <EyeDepthGallery
+          items={depthGallery.map((item) => ({
+            src: srcFor(item.file),
+            title: item.title,
+            note: item.note,
+            collection: item.collection,
+          }))}
+        />
 
         <section id="eye-gallery" className="eye-gallery-section" aria-label="Photography archive">
           <div className="eye-section-head eye-motion-item">

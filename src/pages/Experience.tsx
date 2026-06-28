@@ -80,15 +80,20 @@ export default function Experience() {
       const letters = gsap.utils.toArray<HTMLElement>(".about-letter-char");
 
       if (letterScene && letters.length > 0) {
+        const isCompactScene = window.matchMedia("(max-width: 860px)").matches;
         const scatterRangeX = Math.min(window.innerWidth * 0.42, 520);
         const scatterRangeY = Math.min(window.innerHeight * 0.42, 330);
 
         const assembly = gsap.timeline({
+          defaults: { ease: "none" },
           scrollTrigger: {
             trigger: letterScene,
-            start: "top 85%",
-            end: "bottom 60%",
-            scrub: 0.8,
+            start: isCompactScene ? "top 82%" : "top top",
+            end: isCompactScene ? "bottom 45%" : "+=1650",
+            scrub: isCompactScene ? 0.8 : 1.05,
+            pin: !isCompactScene,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
           },
         });
 
@@ -96,16 +101,16 @@ export default function Experience() {
           .fromTo(
             ".about-portrait",
             { y: 34, scale: 0.92, autoAlpha: 0.74 },
-            { y: -10, scale: 1, autoAlpha: 1, ease: "none" },
+            { y: -10, scale: 1, autoAlpha: 1, duration: 0.64 },
             0
           )
           .fromTo(
             ".about-assembly-final",
             { autoAlpha: 0.5, y: 28 },
-            { autoAlpha: 1, y: 0, ease: "none" },
-            0.38
+            { autoAlpha: 1, y: 0, duration: 0.45 },
+            0.48
           )
-          .to(".about-bg-word", { xPercent: -8, autoAlpha: 0.18, ease: "none" }, 0);
+          .to(".about-bg-word", { xPercent: -8, autoAlpha: 0.18, duration: 0.95 }, 0);
 
         letters.forEach((letter, index) => {
           const side = index % 2 === 0 ? -1 : 1;
@@ -129,9 +134,9 @@ export default function Experience() {
               rotate: 0,
               autoAlpha: 1,
               filter: "blur(0px)",
-              ease: "none",
+              duration: 0.42,
             },
-            0.04 + index * 0.006
+            0.1 + index * 0.008
           );
         });
 
@@ -146,10 +151,13 @@ export default function Experience() {
           assembly.fromTo(
             word,
             { x, y, rotate, autoAlpha: 0.12, filter: "blur(1px)" },
-            { x: 0, y: 0, rotate: 0, autoAlpha: 1, filter: "blur(0px)", ease: "none" },
-            0.05 + index * 0.0026
+            { x: 0, y: 0, rotate: 0, autoAlpha: 1, filter: "blur(0px)", duration: 0.34 },
+            0.18 + index * 0.0045
           );
         });
+
+        assembly.to(".about-scene-stage", { y: -8, duration: 0.12 }, 0.88);
+        assembly.to({}, { duration: 0.28 });
       }
 
       gsap.to(".about-scanline", {
